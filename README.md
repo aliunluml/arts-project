@@ -1,4 +1,4 @@
-# ryan-project
+# arts-project
 
 Computational analysis of portraits.
 
