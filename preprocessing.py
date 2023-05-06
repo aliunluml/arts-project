@@ -36,9 +36,9 @@ class PainterByNumbers(t.util.data.Dataset):
         face_detector.setInput(cv2.dnn.blobFromImage(painting, 1.0, (300, 300), (104.0, 177.0, 123.0), False, False))
         detections = face_detector.forward()
 
-
-
+        # TODO
         if(len(detections)>0):
+            bbs=[]
             # If there are faces detected
 
             # we're making the assumption that each image has only ONE
@@ -52,20 +52,22 @@ class PainterByNumbers(t.util.data.Dataset):
                 if score > conf_thres:
                     # compute the (x, y)-coordinates of the bounding box for
                     # the face
-                    box = detections[0, 0, i, 3:7] * np.array([width, height, width, height])
-                    box = box.astype("int")
-                    (start_x, start_y, end_x, end_y) = box
 
-                    # extract the face ROI and grab the ROI dimensions
-                    face = painting[start_y:end_y, start_x:end_x]
+                    x1 = int(detections[0, 0, i, 3] * width)
+                    y1 = int(detections[0, 0, i, 4] * height)
+                    x2 = int(detections[0, 0, i, 5] * width)
+                    y2 = int(detections[0, 0, i, 6] * height)
 
-                    (fh, fw) = face.shape[:2]
+                    # extract the face ROI as bounding box and grab its dimensions
+                    bb = painting[y1:y2+1, x1:x2+1]
+
+                    (face_height, face_width) = bb.shape[:2]
                     # ensure the face width and height are sufficiently large
-                    if fw < 20 or fh < 20:
+                    if face_width < 20 or face_height < 20:
                         pass
                     else:
-                        faces_bb.append(box)
+                        bbs.append(bb)
 
         else:
-            # Collate function in the dataloader deals with the portraits where faces are undetected
+            # Collate function in the dataloader deals with the portraits where no face is detected
             return None
