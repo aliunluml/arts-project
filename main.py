@@ -40,13 +40,15 @@ def collate_fn_replace_corrupted(batch, dataset):
 
 def main():
     project_dir = os.getcwd()
-    dataset = PainterByNumbers(project_dir)
+    dataset_dir=os.path.join(project_dir, 'train_4')
+    detector_dir=os.path.join(project_dir, 'pretrained')
+    dataset = PainterByNumbers(dataset_dir,detector_dir)
 
     custom_collate_fn = functools.partial(collate_fn_replace_corrupted, dataset=dataset)
-    loader = DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
+    loader = t.utils.data.DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
     # loader = DataLoader(dataset,batch_size=batch_size,num_workers=num_workers,pin_memory=pin_memory,collate_fn=custom_collate_fn)
 
-    inputs=next(iter(loader))   
+    inputs=next(iter(loader))
 
 if __name__ == '__main__':
     main()

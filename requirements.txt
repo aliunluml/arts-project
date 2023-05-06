@@ -99,6 +99,7 @@ jupyterlab @ file:///tmp/build/80754af9/jupyterlab_1619133235951/work
 jupyterlab-pygments @ file:///tmp/build/80754af9/jupyterlab_pygments_1601490720602/work
 jupyterlab-server @ file:///tmp/build/80754af9/jupyterlab_server_1617134334258/work
 jupyterlab-widgets @ file:///tmp/build/80754af9/jupyterlab_widgets_1609884341231/work
+kaggle==1.5.3
 keyring @ file:///opt/concourse/worker/volumes/live/107edf16-ab8b-49bb-692b-65f944af2b43/volume/keyring_1614616747185/work
 kiwisolver @ file:///opt/concourse/worker/volumes/live/0b2f3e77-eaa3-4995-7dd0-c994762fcbde/volume/kiwisolver_1612282417472/work
 lazy-object-proxy @ file:///opt/concourse/worker/volumes/live/e4bc3ba3-f365-4387-5772-cbb667714c62/volume/lazy-object-proxy_1616529072711/work

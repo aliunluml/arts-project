@@ -4,30 +4,32 @@ import os
 import cv2
 import sys
 
-class PainterByNumbers(t.util.data.Dataset):
-    def __init__(self,root_dir,transform=None:
+class PainterByNumbers(t.utils.data.Dataset):
+    def __init__(self,dataset_dir,detector_dir,transform=None):
 
         # root_dir = PATH for the project directory
         # transform = torchvision transformations
-        csv_file_path=os.path.join(root_dir,'train_info.csv')
-        self.train_info_df = pd.read_csv(csv_file_path)
-        self.root_dir_path = root_dir
         self.transform=transform
+        self.dataset_path=dataset_dir
+        self.detector_path=detector_dir
 
     def __len__(self):
-        result = len(self.train_info_df.index)
+        filenames=os.listdir(self.dataset_path)
+        result = len(filenames)
         return result
 
     def __getitem__(self,idx):
-        file_path = os.path.join(self.root_dir_path ,'train'  ,self.train_info_df['filename'].iloc[idx])
+        filename=str(idx+1)+'.jpg'
+        file_path = os.path.join(self.dataset_path, filename)
+
         painting = cv2.imread(file_path)
         width = painting.shape[1]
         height = painting.shape[0]
 
         # https://github.com/opencv/opencv/blob/3.4.0/samples/dnn/resnet_ssd_face_python.py
-        detector_config_path = os.path.join(self.root_dir_path ,'pretrained','resnet10_ssd.prototxt')
+        detector_config_path = os.path.join(self.detector_path,'resnet10_ssd.prototxt')
         # https://github.com/opencv/opencv_3rdparty/tree/dnn_samples_face_detector_20170830
-        detector_model_path = os.path.join(self.root_dir_path ,'pretrained','res10_300x300_ssd_iter_140000.caffemodel')
+        detector_model_path = os.path.join(self.detector_path,'res10_300x300_ssd_iter_140000.caffemodel')
 
         conf_thres=0.7
         face_detector = cv2.dnn.readNetFromCaffe(detector_config_path, detector_model_path)
