@@ -1,7 +1,11 @@
 import functools
 import random
 import torch as t
+import os
+from preprocessing import PainterByNumbers
 
+
+# Taken form https://stackoverflow.com/questions/57815001/pytorch-collate-fn-reject-sample-and-yield-another/57882783#57882783
 def collate_fn_replace_corrupted(batch, dataset):
     """Collate function that allows to replace corrupted examples in the
     dataloader. It expect that the dataloader returns 'None' when that occurs.
@@ -35,10 +39,14 @@ def collate_fn_replace_corrupted(batch, dataset):
 
 
 def main():
-
+    project_dir = os.getcwd()
+    dataset = PainterByNumbers(project_dir)
 
     custom_collate_fn = functools.partial(collate_fn_replace_corrupted, dataset=dataset)
-    loader = DataLoader(dataset,batch_size=batch_size,num_workers=num_workers,pin_memory=pin_memory,collate_fn=custom_collate_fn)
+    loader = DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
+    # loader = DataLoader(dataset,batch_size=batch_size,num_workers=num_workers,pin_memory=pin_memory,collate_fn=custom_collate_fn)
+
+    inputs=next(iter(loader))   
 
 if __name__ == '__main__':
     main()

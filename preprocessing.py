@@ -2,7 +2,7 @@ import torch as t
 import pandas as pd
 import os
 import cv2
-
+import sys
 
 class PainterByNumbers(t.util.data.Dataset):
     def __init__(self,root_dir,transform=None:
@@ -40,33 +40,35 @@ class PainterByNumbers(t.util.data.Dataset):
         if(len(detections)>0):
             bbs=[]
             # If there are faces detected
-
-            # we're making the assumption that each image has only ONE
-            # face, so find the bounding box with the largest probability
-            for i in range(0, detections.shape[2]):
-
-                score = detections[0, 0, i, 2]
-
-                # ensure that the detection greater than our threshold is
-                # selected
-                if score > conf_thres:
-                    # compute the (x, y)-coordinates of the bounding box for
-                    # the face
-
-                    x1 = int(detections[0, 0, i, 3] * width)
-                    y1 = int(detections[0, 0, i, 4] * height)
-                    x2 = int(detections[0, 0, i, 5] * width)
-                    y2 = int(detections[0, 0, i, 6] * height)
-
-                    # extract the face ROI as bounding box and grab its dimensions
-                    bb = painting[y1:y2+1, x1:x2+1]
-
-                    (face_height, face_width) = bb.shape[:2]
-                    # ensure the face width and height are sufficiently large
-                    if face_width < 20 or face_height < 20:
-                        pass
-                    else:
-                        bbs.append(bb)
+            print(detections.shape)
+            print(type(detections))
+            sys.exit()
+            # # we're making the assumption that each image has only ONE
+            # # face, so find the bounding box with the largest probability
+            # for i in range(0, detections.shape[2]):
+            #
+            #     score = detections[0, 0, i, 2]
+            #
+            #     # ensure that the detection greater than our threshold is
+            #     # selected
+            #     if score > conf_thres:
+            #         # compute the (x, y)-coordinates of the bounding box for
+            #         # the face
+            #
+            #         x1 = int(detections[0, 0, i, 3] * width)
+            #         y1 = int(detections[0, 0, i, 4] * height)
+            #         x2 = int(detections[0, 0, i, 5] * width)
+            #         y2 = int(detections[0, 0, i, 6] * height)
+            #
+            #         # extract the face ROI as bounding box and grab its dimensions
+            #         bb = painting[y1:y2+1, x1:x2+1]
+            #
+            #         (face_height, face_width) = bb.shape[:2]
+            #         # ensure the face width and height are sufficiently large
+            #         if face_width < 20 or face_height < 20:
+            #             pass
+            #         else:
+            #             bbs.append(bb)
 
         else:
             # Collate function in the dataloader deals with the portraits where no face is detected
