@@ -1,9 +1,10 @@
 import torch as t
-import pandas as pd
 import numpy as np
 import os
 import cv2
 import sys
+
+
 
 class PainterByNumbers(t.utils.data.Dataset):
     def __init__(self,dataset_dir,detector_dir,transform=lambda x:x):
@@ -97,11 +98,11 @@ class PainterByNumbers(t.utils.data.Dataset):
         if face is None:
             return None
         else:
-            # resize and normalize
+            # resize for FSA-Net
             face = cv2.resize(face,(64,64))
             # OpenCV has BGR order whereas Pytorch has RGB. This does not impact the pretrained FSA-Net we have in our pipeline because it was trained on RGB images.
             face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
             # convert HWC format to CHW
-            face = face.transpose((2,0,1))
-
+            face = np.transpose(face,(2,0,1))
+            # Apply data tranformations/augmentations/etc.
             return self.transform(face)
