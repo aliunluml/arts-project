@@ -1,6 +1,7 @@
 import functools
 import random
 import torch as t
+import torchvision as tv
 import os
 from preprocessing import PainterByNumbers
 
@@ -42,7 +43,9 @@ def main():
     project_dir = os.getcwd()
     dataset_dir=os.path.join(project_dir, 'train_4')
     detector_dir=os.path.join(project_dir, 'pretrained')
-    dataset = PainterByNumbers(dataset_dir,detector_dir)
+
+    transform = tv.transforms.Compose([tv.transforms.Normalize(mean=127.5,std=128),tv.transforms.ToTensor()])
+    dataset = PainterByNumbers(dataset_dir,detector_dir,transform)
 
     custom_collate_fn = functools.partial(collate_fn_replace_corrupted, dataset=dataset)
     loader = t.utils.data.DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
