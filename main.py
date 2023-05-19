@@ -1,26 +1,21 @@
 import functools
 import random
 import torch as t
+import numpy as np
+import pandas as pd
 import torchvision as tv
 import os
 from preprocessing import PainterByNumbers
+from multiprocessing import cpu_count
+from onnx2torch import convert
 
+RANDOM_SEED=0
+BATCH_SIZE=16
+DATASET_DIRECTORY='train_4'
+DETECTOR_DIRECTORY='pretrained'
 
 # Taken form https://stackoverflow.com/questions/57815001/pytorch-collate-fn-reject-sample-and-yield-another/57882783#57882783
 def collate_fn_replace_corrupted(batch, dataset):
-    """Collate function that allows to replace corrupted examples in the
-    dataloader. It expect that the dataloader returns 'None' when that occurs.
-    The 'None's in the batch are replaced with another examples sampled randomly.
-
-    Args:
-        batch (torch.Tensor): batch from the DataLoader.
-        dataset (torch.utils.data.Dataset): dataset which the DataLoader is loading.
-            Specify it with functools.partial and pass the resulting partial function that only
-            requires 'batch' argument to DataLoader's 'collate_fn' option.
-
-    Returns:
-        torch.Tensor: batch with new examples instead of corrupted ones.
-    """
     # Idea from https://stackoverflow.com/a/57882783
 
     original_batch_len = len(batch)
@@ -38,20 +33,78 @@ def collate_fn_replace_corrupted(batch, dataset):
     return torch.utils.data.dataloader.default_collate(batch)
 
 
-
 def main():
+    t.backends.cudnn.benchmark=True
+
+    t.manual_seed(RANDOM_SEED)
+
+    if t.cuda.is_available():
+        device = t.device("cuda")
+    else:
+        device = t.device("cpu")
+
+
     project_dir = os.getcwd()
-    dataset_dir=os.path.join(project_dir, 'train_4')
-    detector_dir=os.path.join(project_dir, 'pretrained')
+    dataset_dir=os.path.join(project_dir, DATASET_DIRECTORY)
+    detector_dir=os.path.join(project_dir, DETECTOR_DIRECTORY)
 
     transform = tv.transforms.Compose([tv.transforms.Normalize(mean=127.5,std=128),tv.transforms.ToTensor()])
     dataset = PainterByNumbers(dataset_dir,detector_dir,transform)
 
     custom_collate_fn = functools.partial(collate_fn_replace_corrupted, dataset=dataset)
-    loader = t.utils.data.DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
-    # loader = DataLoader(dataset,batch_size=batch_size,num_workers=num_workers,pin_memory=pin_memory,collate_fn=custom_collate_fn)
 
-    inputs=next(iter(loader))
+    # loader = t.utils.data.DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
+    loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=cpu_count(),pin_memory=True,collate_fn=custom_collate_fn)
+
+    # load the prerained head pose estimators
+    fsanet1 = convert(os.path.join(detector_dir, 'fsanet-1x1-iter-688590.onnx'))
+    fsanet2 = convert(os.path.join(detector_dir, 'fsanet-var-iter-688590.onnx'))
+
+    # load the pretrained gender classifier
+    resnet = tv.models.resnet18()
+    num_features = resnet.fc.in_features
+    resnet.fc = t.nn.Linear(num_features, 2)
+    resnet.load_state_dict(t.load(os.path.join(detector_dir, 'resnet18.pth')))
+
+    fsanet1.to(device)
+    fsanet2.to(device)
+    resnet.to(device)
+
+    fsanet1.eval()
+    fsanet2.eval()
+    resnet.eval()
+
+    metadata=[]
+
+    with t.no_grad()
+        for batch, filenames in loader:
+            batch.to(device)
+
+            pose1 = fsanet1(batch)
+            pose2 = fsanet2(batch)
+            pose = t.mean(t.stack((pose1,pose2)),dim=0)
+
+            # This is due to the FSA-Net implementation
+            # yaw = pose[:,0]
+            # pitch = pose[:,1]
+            # roll = pose[:,2]
+
+            logits = resnet(batch)
+            genders = t.argmax(logits,dim=-1)
+
+            # This is due to the Resnet18-based Gender Classifier implementation
+            genders[genders==0] = 'female'
+            genders[genders==1] = 'male'
+
+            genders = genders.cpu().numpy()
+            filenames = filenames.cpu().numpy()
+            pose = pose.cpu().numpy()
+
+            batch_metadata = {'filename'=filenames,'yaw' = pose[:,0],'pitch' = pose[:,1], 'roll' = pose[:,2],'gender'=genders}
+            metadata.append(batch_metadata)
+
+    df = pd.DataFrame(metadata)
+    df.to_csv('paintings_metadata.csv',index=False)
 
 if __name__ == '__main__':
     main()

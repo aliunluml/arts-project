@@ -9,8 +9,6 @@ import sys
 class PainterByNumbers(t.utils.data.Dataset):
     def __init__(self,dataset_dir,detector_dir,transform=lambda x:x):
 
-        # root_dir = PATH for the project directory
-        # transform = torchvision transformations
         self.transform=transform
         self.dataset_path=dataset_dir
         self.detector_path=detector_dir
@@ -79,6 +77,7 @@ class PainterByNumbers(t.utils.data.Dataset):
 
 
     def __getitem__(self,idx):
+        # Filenames start from '1.jpg', not '0.jpg' because we rename partition datasets during development to be as such
         filename=str(idx+1)+'.jpg'
         file_path = os.path.join(self.dataset_path, filename)
         # OpenCV loads the image in BGR channel order
@@ -98,11 +97,13 @@ class PainterByNumbers(t.utils.data.Dataset):
         if face is None:
             return None
         else:
-            # resize for FSA-Net
+            # resize for FSA-Net. It is already standardized.
             face = cv2.resize(face,(64,64))
             # OpenCV has BGR order whereas Pytorch has RGB. This does not impact the pretrained FSA-Net we have in our pipeline because it was trained on RGB images.
             face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
             # convert HWC format to CHW
             face = np.transpose(face,(2,0,1))
             # Apply data tranformations/augmentations/etc.
-            return self.transform(face)
+            x = self.transform(face)
+            
+            return (x, filename)
