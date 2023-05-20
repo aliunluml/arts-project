@@ -108,7 +108,7 @@ def main():
     filename = 'resnet18-iter-'+str(iter)
     df = pd.DataFrame(info)
     df.to_csv(filename+'.csv',index=False)
-    t.save(net.state_dict(), os.path.join(project_dir,'pretrained',filename+'.pth'))
+    t.save(resnet.state_dict(), os.path.join(project_dir,'pretrained',filename+'.pth'))
 
 
 if __name__ == '__main__':
