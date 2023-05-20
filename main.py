@@ -5,14 +5,16 @@ import numpy as np
 import pandas as pd
 import torchvision as tv
 import os
-from preprocessing import PainterByNumbers
+from dataset import PainterByNumbers
 from multiprocessing import cpu_count
 from onnx2torch import convert
 
+
 RANDOM_SEED=0
 BATCH_SIZE=16
-DATASET_DIRECTORY='train_4'
+DATASET_DIRECTORY='painter-by-numbers/train'
 DETECTOR_DIRECTORY='pretrained'
+
 
 # Taken form https://stackoverflow.com/questions/57815001/pytorch-collate-fn-reject-sample-and-yield-another/57882783#57882783
 def collate_fn_replace_corrupted(batch, dataset):
@@ -105,6 +107,7 @@ def main():
 
     df = pd.DataFrame(metadata)
     df.to_csv('paintings_metadata.csv',index=False)
+
 
 if __name__ == '__main__':
     main()
