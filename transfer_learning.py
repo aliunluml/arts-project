@@ -82,6 +82,7 @@ def main():
     transforms_test = tv.transforms.Compose([tv.transforms.Resize((64, 64)),tv.transforms.ToTensor(),tv.transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
     project_dir = os.getcwd()
+    # ImageFolder object implicitly labels images with the index of their corresponding folders in alphabetical order. Please see the find_classes method in its documentation
     training_dataset = tv.datasets.ImageFolder(os.path.join(project_dir,TRAINING_DATASET_DIRECTORY), transforms_train)
     testing_dataset = tv.datasets.ImageFolder(os.path.join(project_dir, TESTING_DATASET_DIRECTORY), transforms_test)
 
