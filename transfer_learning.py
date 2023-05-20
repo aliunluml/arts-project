@@ -107,7 +107,7 @@ def main():
 
     filename = 'resnet18-iter-'+str(iter)
     df = pd.DataFrame(info)
-    df.to_csv(filename+'.csv',index=False)
+    df.to_csv(os.path.join(project_dir,'pretrained',filename+'.csv'),index=False)
     t.save(resnet.state_dict(), os.path.join(project_dir,'pretrained',filename+'.pth'))
 
 

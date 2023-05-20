@@ -66,7 +66,7 @@ def main():
     resnet = tv.models.resnet18()
     num_features = resnet.fc.in_features
     resnet.fc = t.nn.Linear(num_features, 2)
-    resnet.load_state_dict(t.load(os.path.join(detector_dir, 'resnet18.pth')))
+    # resnet.load_state_dict(t.load(os.path.join(detector_dir, 'resnet18-iter-.pth')))
 
     fsanet1.to(device)
     fsanet2.to(device)
