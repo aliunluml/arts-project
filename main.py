@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 import torchvision as tv
 import os
+import onnx
 from dataset import PainterByNumbers
 from multiprocessing import cpu_count
-from onnx2torch import convert
 
 
 RANDOM_SEED=0
@@ -59,14 +59,9 @@ def main():
     loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=cpu_count(),pin_memory=True,collate_fn=custom_collate_fn)
 
     # load the prerained head pose estimators
-    fsanet1 = convert(os.path.join(detector_dir, 'fsanet-1x1-iter-688590.onnx'))
-    fsanet2 = convert(os.path.join(detector_dir, 'fsanet-var-iter-688590.onnx'))
-
-    # load the pretrained gender classifier
-    resnet = tv.models.resnet18()
-    num_features = resnet.fc.in_features
-    resnet.fc = t.nn.Linear(num_features, 2)
-    # resnet.load_state_dict(t.load(os.path.join(detector_dir, 'resnet18-iter-.pth')))
+    fsanet1 = onnx.load(os.path.join(detector_dir, 'fsanet-1x1-iter-688590.onnx'))
+    fsanet2 = onnx.load(os.path.join(detector_dir, 'fsanet-var-iter-688590.onnx'))
+    fsanet2 = onnx.load(os.path.join(detector_dir, 'resnet18-iter-AAAAA.onnx'))
 
     fsanet1.to(device)
     fsanet2.to(device)
