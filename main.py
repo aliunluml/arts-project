@@ -78,7 +78,7 @@ def main():
 
     metadata=[]
 
-    with t.no_grad()
+    with t.no_grad():
         for batch, filenames in loader:
             batch=batch.to(device)
 
