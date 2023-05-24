@@ -62,7 +62,7 @@ def test(net,objective,dataloader,device):
 
             gender = t.argmax(logits,dim=1)
 
-            acc = len(logits[logits==labels])/len(batch)
+            acc = len(gender[gender==labels])/len(batch)
             accs.append(acc)
 
     epoch_loss = sum(losses)/len(losses)
