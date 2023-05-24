@@ -9,8 +9,8 @@ RANDOM_SEED=0
 BATCH_SIZE=16
 EPOCHS=5
 LEARNING_RATE=1e-3
-TRAINING_DATASET_DIRECTORY='gender-classification-dataset/Training'
-TESTING_DATASET_DIRECTORY='gender-classification-dataset/Validation'
+TRAINING_DATASET_DIRECTORY='Training'
+TESTING_DATASET_DIRECTORY='Validation'
 DETECTOR_DIRECTORY='pretrained'
 
 def train(net,optimizer,objective,dataloader,device,iteration):
@@ -44,7 +44,7 @@ def train(net,optimizer,objective,dataloader,device,iteration):
     epoch_loss = sum(losses)/len(losses)
     epoch_acc = sum(accs)/len(accs)
 
-    return (epoch_loss, epoch_acc)
+    return (epoch_loss, epoch_acc,iteration)
 
 def test(net,objective,dataloader,device):
     net.eval()
@@ -86,7 +86,7 @@ def main():
     transforms_test = tv.transforms.Compose([tv.transforms.Resize((64, 64)),tv.transforms.ToTensor(),tv.transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
     project_dir = os.getcwd()
-    # ImageFolder object implicitly labels images with the index of their corresponding folders in alphabetical order. Please see the find_classes method in its documentation
+    # ImageFolder object implicitly labels images with the index of their corresponding folders in alphabetical order (female=0, male=1). Please see the find_classes method within ImageFolder.
     training_dataset = tv.datasets.ImageFolder(os.path.join(project_dir,TRAINING_DATASET_DIRECTORY), transforms_train)
     testing_dataset = tv.datasets.ImageFolder(os.path.join(project_dir, TESTING_DATASET_DIRECTORY), transforms_test)
 
@@ -105,15 +105,30 @@ def main():
     i = 0
 
     for e in range(0,EPOCHS):
-        train_loss,train_acc = train(resnet,optimizer,creloss,training_dataloader,device,i)
+        train_loss,train_acc,i = train(resnet,optimizer,creloss,training_dataloader,device,i)
         test_loss,test_acc = test(resnet,creloss,testing_dataloader,device)
         epoch_info={'epoch':e,'train_loss':train_loss,'train_accuracy':train_acc,'test_loss':test_loss,'test_accuracy':test_acc}
         info.append(epoch_info)
 
     filename = 'resnet18-iter-'+str(i)
     df = pd.DataFrame(info)
-    df.to_csv(os.path.join(project_dir,'pretrained',filename+'.csv'),index=False)
+    df.to_csv((filename+'.csv'),index=False)
     t.save(resnet.state_dict(), os.path.join(project_dir,'pretrained',filename+'.pth'))
+
+    # Input to the model
+    x = next(iter(testing_dataloader))
+
+    # Export the model
+    t.onnx.export(resnet,               # model being run
+                  x,                         # model input (or a tuple for multiple inputs)
+                  os.path.join(project_dir,'pretrained',filename+'.onnx'),   # where to save the model (can be a file or file-like object)
+                  export_params=True,        # store the trained parameter weights inside the model file
+                  opset_version=10,          # the ONNX version to export the model to
+                  do_constant_folding=True,  # whether to execute constant folding for optimization
+                  input_names = ['input'],   # the model's input names
+                  output_names = ['output'], # the model's output names
+                  dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
+                                'output' : {0 : 'batch_size'}})
 
 
 if __name__ == '__main__':
