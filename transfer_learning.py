@@ -13,7 +13,7 @@ TRAINING_DATASET_DIRECTORY='gender-classification-dataset/Training'
 TESTING_DATASET_DIRECTORY='gender-classification-dataset/Validation'
 DETECTOR_DIRECTORY='pretrained'
 
-def train(net,optimizer,objective,dataloader,device,iter):
+def train(net,optimizer,objective,dataloader,device,iteration):
 
     net.train()
     net.to(device)
@@ -21,8 +21,8 @@ def train(net,optimizer,objective,dataloader,device,iter):
     losses=[]
     accs=[]
     for batch,labels in dataloader:
-        batch.to(device)
-        labels.to(device)
+        batch=batch.to(device)
+        labels=labels.to(device)
 
         logits = net(batch)
         nll = objective(logits,labels)
@@ -34,10 +34,12 @@ def train(net,optimizer,objective,dataloader,device,iter):
         loss = nll.detach().cpu()
         losses.append(loss)
 
-        acc = len(logits[logits==labels])/len(batch)
+        gender = t.argmax(logits,dim=1)
+
+        acc = len(gender[gender==labels])/len(batch)
         accs.append(acc)
 
-        iter += 1
+        iteration += 1
 
     epoch_loss = sum(losses)/len(losses)
     epoch_acc = sum(accs)/len(accs)
@@ -51,12 +53,14 @@ def test(net,objective,dataloader,device):
     accs=[]
     with t.no_grad():
         for batch,labels in dataloader:
-            batch.to(device)
-            labels.to(device)
+            batch=batch.to(device)
+            labels=labels.to(device)
 
             logits = net(batch)
             nll = objective(logits,labels)
             losses.append(nll.cpu())
+
+            gender = t.argmax(logits,dim=1)
 
             acc = len(logits[logits==labels])/len(batch)
             accs.append(acc)
@@ -98,15 +102,15 @@ def main():
     creloss=t.nn.CrossEntropyLoss()
 
     info = []
-    iter = 0
+    i = 0
 
-    for epoch in range(0,EPOCHS):
-        train_loss,train_acc = train(resnet,optimizer,creloss,training_dataloader,device,iter)
+    for e in range(0,EPOCHS):
+        train_loss,train_acc = train(resnet,optimizer,creloss,training_dataloader,device,i)
         test_loss,test_acc = test(resnet,creloss,testing_dataloader,device)
-        epoch_info={'epoch'=epoch,'train_loss'=train_loss,'train_accuracy'=train_acc,'test_loss'=test_loss,'test_accuracy'=test_acc}
+        epoch_info={'epoch':e,'train_loss':train_loss,'train_accuracy':train_acc,'test_loss':test_loss,'test_accuracy':test_acc}
         info.append(epoch_info)
 
-    filename = 'resnet18-iter-'+str(iter)
+    filename = 'resnet18-iter-'+str(i)
     df = pd.DataFrame(info)
     df.to_csv(os.path.join(project_dir,'pretrained',filename+'.csv'),index=False)
     t.save(resnet.state_dict(), os.path.join(project_dir,'pretrained',filename+'.pth'))

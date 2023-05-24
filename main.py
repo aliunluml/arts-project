@@ -80,7 +80,7 @@ def main():
 
     with t.no_grad()
         for batch, filenames in loader:
-            batch.to(device)
+            batch=batch.to(device)
 
             pose1 = fsanet1(batch)
             pose2 = fsanet2(batch)
@@ -102,7 +102,7 @@ def main():
             filenames = filenames.cpu().numpy()
             pose = pose.cpu().numpy()
 
-            batch_metadata = {'filename'=filenames,'yaw' = pose[:,0],'pitch' = pose[:,1], 'roll' = pose[:,2],'gender'=genders}
+            batch_metadata = {'filename':filenames,'yaw' : pose[:,0],'pitch' : pose[:,1], 'roll' : pose[:,2],'gender':genders}
             metadata.append(batch_metadata)
 
     df = pd.DataFrame(metadata)
