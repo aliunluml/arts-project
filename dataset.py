@@ -104,6 +104,7 @@ class PainterByNumbers(t.utils.data.Dataset):
             # convert HWC format to CHW
             face = np.transpose(face,(2,0,1))
             # Apply data tranformations/augmentations/etc.
-            x = self.transform(face)
-            
+            x = t.from_numpy(face).float()
+            x = self.transform(x)
+
             return (x, filename)

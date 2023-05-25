@@ -53,7 +53,7 @@ def main():
     dataset_dir=os.path.join(project_dir, DATASET_DIRECTORY)
     detector_dir=os.path.join(project_dir, DETECTOR_DIRECTORY)
 
-    transform = tv.transforms.Compose([tv.transforms.Normalize(mean=127.5,std=128),tv.transforms.ToTensor()])
+    transform = tv.transforms.Compose([tv.transforms.Normalize(mean=127.5,std=128)])
     dataset = PainterByNumbers(dataset_dir,detector_dir,transform)
 
     custom_collate_fn = functools.partial(collate_fn_replace_corrupted, dataset=dataset)
