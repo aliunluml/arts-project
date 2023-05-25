@@ -35,6 +35,8 @@ def collate_fn_replace_corrupted(batch, dataset):
     # Finally, when the whole batch is fine, return it
     return torch.utils.data.dataloader.default_collate(batch)
 
+def to_numpy(tensor):
+    return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
 def main():
     t.backends.cudnn.benchmark=True
@@ -60,10 +62,6 @@ def main():
     loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=cpu_count(),pin_memory=True,collate_fn=custom_collate_fn)
 
 
-
-
-
-
     # load the prerained head pose estimators
     fsanet1 = onnx.load(os.path.join(detector_dir, 'fsanet-1x1-iter-688590.onnx'))
     onnx.checker.check_model(fsanet1)
@@ -82,34 +80,54 @@ def main():
     fsanet2_session = onnxruntime.InferenceSession(fsanet2, providers=EP_list)
     resnet18_session = onnxruntime.InferenceSession(resnet18, providers=EP_list)
 
-
     metadata=[]
 
     with t.no_grad():
         for batch, filenames in loader:
-            batch=batch.to(device)
+            batch=batch.to(device).contiguous()
 
-            pose1 = fsanet1(batch)
-            pose2 = fsanet2(batch)
-            pose = t.mean(t.stack((pose1,pose2)),dim=0)
+            # HEAD POSE ESTIMATION
+            head_poses=[]
 
-            # This is due to the FSA-Net implementation
-            # yaw = pose[:,0]
-            # pitch = pose[:,1]
-            # roll = pose[:,2]
+            # FSA-Net ensemble with a variance score function and a conv score function
+            for fsanet_session in [fsanet1_session,fsanet2_session]:
 
-            logits = resnet(batch)
-            genders = t.argmax(logits,dim=-1)
+                fsanet_session_binding = fsanet_session.io_binding()
 
-            # This is due to the Resnet18-based Gender Classifier implementation
-            genders[genders==0] = 'female'
-            genders[genders==1] = 'male'
+                fsanet_session_binding.bind_input(name='input',device_type=device.type,device_id=0,element_type=np.float32,shape=tuple(batch.shape),buffer_ptr=batch.data_ptr())
 
-            genders = genders.cpu().numpy()
-            filenames = filenames.cpu().numpy()
-            pose = pose.cpu().numpy()
+                ## Allocate the PyTorch tensor for the model output
+                fsanet_output_shape = (len(batch),3) # You need to specify the output PyTorch tensor shape
+                fsanet_output = t.empty(fsanet_output_shape, dtype=t.float32).to(device).contiguous()
+                fsanet_session_binding.bind_output(name='output',device_type=device.type,device_id=0,element_type=np.float32,shape=tuple(fsanet_output.shape),buffer_ptr=fsanet_output.data_ptr())
 
-            batch_metadata = {'filename':filenames,'yaw' : pose[:,0],'pitch' : pose[:,1], 'roll' : pose[:,2],'gender':genders}
+                fsanet_session.run_with_iobinding(fsanet_session_binding)
+
+                head_poses.append(fsanet_output)
+
+            avg_head_pose=t.mean(t.stack(head_poses),dim=0).cpu().numpy()
+            yaw = avg_head_pose[:,0]
+            pitch = avg_head_pose[:,1]
+            roll = avg_head_pose[:,2]
+
+            # GENDER CLASSIFICATION
+            resnet18_session_binding = resnet18_session.io_binding()
+
+            resnet18_session_binding.bind_input(name='input',device_type=device.type,device_id=0,element_type=np.float32,shape=tuple(batch.shape),buffer_ptr=batch.data_ptr())
+
+            ## Allocate the PyTorch tensor for the model output
+            resnet18_output_shape = (len(batch),2) # You need to specify the output PyTorch tensor shape
+            resnet18_output = t.empty(resnet18_output_shape, dtype=t.float32).to(device).contiguous()
+            resnet18_session_binding.bind_output(name='output',device_type=device.type,device_id=0,element_type=np.float32,shape=tuple(resnet18_output.shape),buffer_ptr=resnet18_output.data_ptr())
+
+            resnet18_session.run_with_iobinding(resnet18_session_binding)
+
+            gender=t.argmax(resnet18_output,dim=1).cpu().numpy()
+            gender[gender==0] = 'female'
+            gender[gender==1] = 'male'
+
+            # APPEND THE INFO TO SAVE LATER ON AS A CSV FILE
+            batch_metadata = {'filename':filenames,'yaw' : yaw,'pitch' : pitch, 'roll' : roll,'gender':gender}
             metadata.append(batch_metadata)
 
     df = pd.DataFrame(metadata)
