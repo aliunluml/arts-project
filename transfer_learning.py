@@ -116,7 +116,8 @@ def main():
     t.save(resnet.state_dict(), os.path.join(project_dir,'pretrained',filename+'.pth'))
 
     # Input to the model
-    x = next(iter(testing_dataloader))
+    x,_ = next(iter(testing_dataloader))
+    x = x.to(device)
 
     # Export the model
     resnet.eval()
@@ -124,7 +125,7 @@ def main():
                   x,                         # model input (or a tuple for multiple inputs)
                   os.path.join(project_dir,'pretrained',filename+'.onnx'),   # where to save the model (can be a file or file-like object)
                   export_params=True,        # store the trained parameter weights inside the model file
-                  opset_version=9,          # the ONNX version to export the model to
+                  opset_version=10,          # the ONNX version to export the model to
                   do_constant_folding=True,  # whether to execute constant folding for optimization
                   input_names = ['input'],   # the model's input names
                   output_names = ['output'], # the model's output names

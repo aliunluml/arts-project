@@ -13,7 +13,7 @@ from multiprocessing import cpu_count
 
 RANDOM_SEED=0
 BATCH_SIZE=16
-DATASET_DIRECTORY='painter-by-numbers/train'
+DATASET_DIRECTORY='train'
 DETECTOR_DIRECTORY='pretrained'
 
 
@@ -69,7 +69,7 @@ def main():
     onnx.checker.check_model(fsanet2)
 
     # load the pretrained gender classifier
-    resnet18 = onnx.load(os.path.join(detector_dir, 'resnet18-iter-AAAAA.onnx'))
+    resnet18 = onnx.load(os.path.join(detector_dir, 'resnet18-iter-14695.onnx'))
     onnx.checker.check_model(resnet18)
 
     # prefer CUDA Execution Provider over CPU Execution Provider
