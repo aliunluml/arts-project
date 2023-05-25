@@ -84,6 +84,7 @@ def main():
 
     with t.no_grad():
         for batch, filenames in loader:
+            # Need to do this to have the correct memory ordering with the tensor elems. This is important because we pass this on as the buffer pointer to onnx input
             batch=batch.to(device).contiguous()
 
             # HEAD POSE ESTIMATION
