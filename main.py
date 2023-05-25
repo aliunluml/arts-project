@@ -62,23 +62,20 @@ def main():
     loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=cpu_count(),pin_memory=True,collate_fn=custom_collate_fn)
 
 
-    # load the prerained head pose estimators
-    fsanet1 = onnx.load(os.path.join(detector_dir, 'fsanet-1x1-iter-688590.onnx'))
-    onnx.checker.check_model(fsanet1)
-    fsanet2 = onnx.load(os.path.join(detector_dir, 'fsanet-var-iter-688590.onnx'))
-    onnx.checker.check_model(fsanet2)
+    # the prerained head pose estimators
+    fsanet1_path = os.path.join(detector_dir, 'fsanet-1x1-iter-688590.onnx')
+    fsanet2_path = os.path.join(detector_dir, 'fsanet-var-iter-688590.onnx')
 
-    # load the pretrained gender classifier
-    resnet18 = onnx.load(os.path.join(detector_dir, 'resnet18-iter-14695.onnx'))
-    onnx.checker.check_model(resnet18)
+    # the pretrained gender classifier
+    resnet18_path = os.path.join(detector_dir, 'resnet18-iter-14695.onnx')
 
     # prefer CUDA Execution Provider over CPU Execution Provider
     EP_list = ['CUDAExecutionProvider', 'CPUExecutionProvider']
 
     # Start envs for running models in their onnx graph format
-    fsanet1_session = onnxruntime.InferenceSession(fsanet1, providers=EP_list)
-    fsanet2_session = onnxruntime.InferenceSession(fsanet2, providers=EP_list)
-    resnet18_session = onnxruntime.InferenceSession(resnet18, providers=EP_list)
+    fsanet1_session = onnxruntime.InferenceSession(fsanet1_path, providers=EP_list)
+    fsanet2_session = onnxruntime.InferenceSession(fsanet2_path, providers=EP_list)
+    resnet18_session = onnxruntime.InferenceSession(resnet18_path, providers=EP_list)
 
     metadata=[]
 
