@@ -33,7 +33,7 @@ def collate_fn_replace_corrupted(batch, dataset):
         # Recursive call to replace the replacements if they are corrupted
         return collate_fn_replace_corrupted(batch, dataset)
     # Finally, when the whole batch is fine, return it
-    return torch.utils.data.dataloader.default_collate(batch)
+    return t.utils.data.dataloader.default_collate(batch)
 
 def to_numpy(tensor):
     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
