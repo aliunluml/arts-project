@@ -6,6 +6,7 @@ import pandas as pd
 import torchvision as tv
 import os
 import onnx
+import onnxruntime
 from dataset import PainterByNumbers
 from multiprocessing import cpu_count
 
@@ -58,18 +59,29 @@ def main():
     # loader = t.utils.data.DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
     loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=cpu_count(),pin_memory=True,collate_fn=custom_collate_fn)
 
+
+
+
+
+
     # load the prerained head pose estimators
     fsanet1 = onnx.load(os.path.join(detector_dir, 'fsanet-1x1-iter-688590.onnx'))
+    onnx.checker.check_model(fsanet1)
     fsanet2 = onnx.load(os.path.join(detector_dir, 'fsanet-var-iter-688590.onnx'))
-    fsanet2 = onnx.load(os.path.join(detector_dir, 'resnet18-iter-AAAAA.onnx'))
+    onnx.checker.check_model(fsanet2)
 
-    fsanet1.to(device)
-    fsanet2.to(device)
-    resnet.to(device)
+    # load the pretrained gender classifier
+    resnet18 = onnx.load(os.path.join(detector_dir, 'resnet18-iter-AAAAA.onnx'))
+    onnx.checker.check_model(resnet18)
 
-    fsanet1.eval()
-    fsanet2.eval()
-    resnet.eval()
+    # prefer CUDA Execution Provider over CPU Execution Provider
+    EP_list = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+
+    # Start envs for running models in their onnx graph format
+    fsanet1_session = onnxruntime.InferenceSession(fsanet1, providers=EP_list)
+    fsanet2_session = onnxruntime.InferenceSession(fsanet2, providers=EP_list)
+    resnet18_session = onnxruntime.InferenceSession(resnet18, providers=EP_list)
+
 
     metadata=[]
 
