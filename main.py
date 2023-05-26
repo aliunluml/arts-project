@@ -89,6 +89,8 @@ def main():
 
             # FSA-Net ensemble with a variance score function and a conv score function
             for fsanet_session in [fsanet1_session,fsanet2_session]:
+                # print(fsanet_session.get_providers()) If CUDAExecutionProvider is absent, install onnxruntime-gpu and export PATHs to the local cuda executable
+                # print(device)
 
                 fsanet_session_binding = fsanet_session.io_binding()
 
@@ -120,9 +122,10 @@ def main():
 
             resnet18_session.run_with_iobinding(resnet18_session_binding)
 
-            gender=t.argmax(resnet18_output,dim=1).cpu().numpy()
-            gender[gender==0] = 'female'
-            gender[gender==1] = 'male'
+            logits=t.argmax(resnet18_output,dim=1).cpu().numpy()
+            # Binary logits {0,1} correspond to 'female' and 'male' as per the alphabetical order in ImageFolder
+            choices = ['female', 'male']
+            gender=np.choose(logits, choices)
 
             # APPEND THE INFO TO SAVE LATER ON AS A CSV FILE
             batch_metadata = {'filename':filenames,'yaw' : yaw,'pitch' : pitch, 'roll' : roll,'gender':gender}
