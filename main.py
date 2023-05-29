@@ -123,8 +123,8 @@ def main():
             resnet18_session.run_with_iobinding(resnet18_session_binding)
 
             logits=t.argmax(resnet18_output,dim=1).cpu().numpy()
-            # Binary logits {0,1} correspond to 'female' and 'male' as per the alphabetical order in ImageFolder
-            choices = ['female', 'male']
+            # Binary logits {0,1} correspond to 'Female' and 'Male' as per the alphabetical order in ImageFolder
+            choices = ['F', 'M']
             gender=np.choose(logits, choices)
 
             # APPEND THE INFO TO SAVE LATER ON AS A CSV FILE
@@ -133,6 +133,12 @@ def main():
 
     df = pd.DataFrame(metadata)
     df.to_csv('paintings_metadata.csv',index=False)
+
+    all_data_info_df=pd.read_csv('all_data_info.csv')
+    df=df.join(all_data_info_df.set_index('new_filename'), on='filename',how='inner')
+    # Please select the columns needed fom all_data_info. This does not do copy()
+    df=df[['date','gender','style','roll','yaw','pitch']]
+    df.to_csv('paintings_all_data_info.csv',index=False)
 
 
 if __name__ == '__main__':
