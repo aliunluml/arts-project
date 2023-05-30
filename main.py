@@ -105,7 +105,7 @@ def main():
 
                 head_poses.append(fsanet_output)
 
-            avg_head_pose=t.mean(t.stack(head_poses),dim=0).cpu().numpy()
+            avg_head_pose = t.mean(t.stack(head_poses),dim=0).cpu().numpy()
             yaw = avg_head_pose[:,0]
             pitch = avg_head_pose[:,1]
             roll = avg_head_pose[:,2]
@@ -122,22 +122,26 @@ def main():
 
             resnet18_session.run_with_iobinding(resnet18_session_binding)
 
-            logits=t.argmax(resnet18_output,dim=1).cpu().numpy()
+            logits = t.argmax(resnet18_output,dim=1).cpu().numpy()
             # Binary logits {0,1} correspond to 'Female' and 'Male' as per the alphabetical order in ImageFolder
             choices = ['F', 'M']
-            gender=np.choose(logits, choices)
+            gender = np.choose(logits, choices)
 
             # APPEND THE INFO TO SAVE LATER ON AS A CSV FILE
             batch_metadata = [{'filename':f,'yaw' : y,'pitch' : p, 'roll' : r,'gender':g} for f,y,p,r,g in zip(filenames,yaw,pitch,roll,gender)]
             metadata.extend(batch_metadata)
 
     df = pd.DataFrame(metadata)
+    # Remove duplicate images that are resampled with collate_fn
+    df = df.drop_duplicates(subset='filename')
     df.to_csv('paintings_metadata.csv',index=False)
 
-    all_data_info_df=pd.read_csv('all_data_info.csv')
-    df=df.join(all_data_info_df.set_index('new_filename'), on='filename',how='inner')
+    all_data_info_df = pd.read_csv('all_data_info.csv')
+    df = df.join(all_data_info_df.set_index('new_filename'), on='filename',how='inner')
+
     # Please select the columns needed fom all_data_info. This does not do copy()
-    df=df[['date','gender','style','roll','yaw','pitch']]
+    df = df[['date','gender','style','roll','yaw','pitch']]
+
     df.to_csv('paintings_all_data_info.csv',index=False)
 
 

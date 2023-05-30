@@ -59,6 +59,7 @@ class PainterByNumbers(t.utils.data.Dataset):
 
                     # extract the face ROI as bounding box and grab its dimensions
                     bb = image[y1:y2+1, x1:x2+1]
+                    cv2.rectangle(image, (x1, y1), (x2, y2),color=(0, 255, 0),thickness=5)
                     # painting is not in the NCHW order
                     (face_height, face_width) = bb.shape[:2]
                     # ensure the face width and height are sufficiently large. input image is 300x300
