@@ -13,7 +13,7 @@ from multiprocessing import cpu_count
 
 RANDOM_SEED=0
 BATCH_SIZE=16
-DATASET_DIRECTORY='train'
+DATASET_DIRECTORY='toy_train'
 DETECTOR_DIRECTORY='pretrained'
 
 
@@ -128,8 +128,8 @@ def main():
             gender=np.choose(logits, choices)
 
             # APPEND THE INFO TO SAVE LATER ON AS A CSV FILE
-            batch_metadata = {'filename':filenames,'yaw' : yaw,'pitch' : pitch, 'roll' : roll,'gender':gender}
-            metadata.append(batch_metadata)
+            batch_metadata = [{'filename':f,'yaw' : y,'pitch' : p, 'roll' : r,'gender':g} for f,y,p,r,g in zip(filenames,yaw,pitch,roll,gender)]
+            metadata.extend(batch_metadata)
 
     df = pd.DataFrame(metadata)
     df.to_csv('paintings_metadata.csv',index=False)
