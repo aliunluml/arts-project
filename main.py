@@ -186,6 +186,7 @@ def main():
                     im = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
                     # draw head pose arrows
                     im = draw_axis(im,yaw[i],pitch[i],roll[i])
+                    # annotate the gender
                     x = im.shape[1]//2
                     y = im.shape[0]//2
                     im = cv2.putText(im,gender[i],(x,y), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
