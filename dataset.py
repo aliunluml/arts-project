@@ -1,5 +1,6 @@
 import torch as t
 import numpy as np
+import pandas as pd
 import os
 import cv2
 import sys
@@ -7,15 +8,15 @@ import sys
 
 
 class PainterByNumbers(t.utils.data.Dataset):
-    def __init__(self,dataset_dir,detector_dir,transform=lambda x:x):
+    def __init__(self,dataset_dir,detector_dir,csv_file_path,transform=lambda x:x):
 
         self.transform=transform
         self.dataset_path=dataset_dir
         self.detector_path=detector_dir
+        self.train_info_df=pd.read_csv(csv_file_path)
 
     def __len__(self):
-        filenames=os.listdir(self.dataset_path)
-        result = len(filenames)
+        result = len(self.train_info_df.index)
         return result
 
     # private method
@@ -80,9 +81,8 @@ class PainterByNumbers(t.utils.data.Dataset):
 
 
     def __getitem__(self,idx):
-        # Filenames start from '1.jpg', not '0.jpg' because we rename partition datasets during development to be as such
-        filename=str(idx+1)+'.jpg'
-        file_path = os.path.join(self.dataset_path, filename)
+        filename = self.train_info_df['new_filename'].iloc[idx]
+        file_path = os.path.join(self.dataset_path,filename)
         # OpenCV loads the image in BGR channel order
         painting = cv2.imread(file_path)
 

@@ -14,11 +14,11 @@ from multiprocessing import cpu_count
 
 RANDOM_SEED=0
 BATCH_SIZE=16
-DATASET_DIRECTORY='toy_train'
+DATASET_DIRECTORY='full_dataset'
 OUT=True
 OUT_DIRECTORY='out'
 DETECTOR_DIRECTORY='pretrained'
-
+DATA_CSV_FILENAME='all_data_info.csv'
 
 
 # Taken from https://github.com/omasaht/headpose-fsanet-pytorch/blob/master/src/utils.py
@@ -91,13 +91,15 @@ def main():
     project_dir = os.getcwd()
     dataset_dir=os.path.join(project_dir, DATASET_DIRECTORY)
     detector_dir=os.path.join(project_dir, DETECTOR_DIRECTORY)
+    csv_file_path=os.path.join(project_dir, DATA_CSV_FILENAME)
     if OUT:
         out_dir=os.path.join(project_dir, OUT_DIRECTORY)
     else:
         out_dir=None
 
+
     transform = tv.transforms.Compose([tv.transforms.Normalize(mean=127.5,std=128)])
-    dataset = PainterByNumbers(dataset_dir,detector_dir,transform)
+    dataset = PainterByNumbers(dataset_dir,detector_dir,csv_file_path,transform)
 
     custom_collate_fn = functools.partial(collate_fn_replace_corrupted, dataset=dataset)
 
@@ -204,7 +206,7 @@ def main():
     df.to_csv('paintings_metadata.csv',index=False)
 
     # Save model outputs combined with other related info from the paintings dataset
-    all_data_info_df = pd.read_csv('all_data_info.csv')
+    all_data_info_df = pd.read_csv(csv_file_path)
     df = df.join(all_data_info_df.set_index('new_filename'), on='filename',how='inner')
 
     # Please select the columns needed fom all_data_info. This does not do copy()

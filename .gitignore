@@ -1,3 +1,6 @@
 .DS_Store
-.zip
-*train*
+*.zip
+train*
+full_dataset
+test
+out
