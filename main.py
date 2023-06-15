@@ -206,7 +206,7 @@ def main():
     df.to_csv('paintings_metadata.csv',index=False)
 
     # Save model outputs combined with other related info from the paintings dataset
-    all_data_info_df = pd.read_csv(csv_file_path)
+    all_data_info_df = pd.read_csv(DATA_CSV_FILENAME)
     df = df.join(all_data_info_df.set_index('new_filename'), on='filename',how='inner')
 
     # Please select the columns needed fom all_data_info. This does not do copy()

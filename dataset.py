@@ -4,7 +4,19 @@ import pandas as pd
 import os
 import cv2
 import sys
+from skimage import io
 
+
+# https://medium.com/joelthchao/programmatically-detect-corrupted-image-8c1b2006c3d3
+def is_corrupt(path):
+    try:
+        _ = io.imread(path)
+    except Exception as e:
+        print(path)
+        print(e)
+        return True
+    else:
+        return False
 
 
 class PainterByNumbers(t.utils.data.Dataset):
@@ -84,7 +96,13 @@ class PainterByNumbers(t.utils.data.Dataset):
         filename = self.train_info_df['new_filename'].iloc[idx]
         file_path = os.path.join(self.dataset_path,filename)
         # OpenCV loads the image in BGR channel order
-        painting = cv2.imread(file_path)
+        painting = cv2.imread(file_path) if not is_corrupt(file_path) else None
+
+        # Painting is None either because the JPEG file is corrupt or because the file_path is incorrect and is assigned None by default
+        if painting is None:
+            return None
+        else:
+            pass
 
         # https://github.com/opencv/opencv/blob/3.4.0/samples/dnn/resnet_ssd_face_python.py
         detector_config_path = os.path.join(self.detector_path,'resnet10_ssd.prototxt')
