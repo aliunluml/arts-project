@@ -6,6 +6,7 @@ import pandas as pd
 import torchvision as tv
 import cv2
 import os
+import sys
 import onnx
 import onnxruntime
 from dataset import PainterByNumbers
@@ -14,7 +15,7 @@ from multiprocessing import cpu_count
 
 RANDOM_SEED=0
 BATCH_SIZE=16
-DATASET_DIRECTORY='full_dataset'
+DATASET_DIRECTORY='toy_train'
 OUT=True
 OUT_DIRECTORY='out'
 DETECTOR_DIRECTORY='pretrained'
@@ -57,7 +58,7 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size = 50,thickness=(2,
 
 
 # Taken form https://stackoverflow.com/questions/57815001/pytorch-collate-fn-reject-sample-and-yield-another/57882783#57882783
-def collate_fn_replace_corrupted(batch, dataset):
+def collate_fn_replace_nonface(batch, dataset):
     # Idea from https://stackoverflow.com/a/57882783
 
     original_batch_len = len(batch)
@@ -74,8 +75,16 @@ def collate_fn_replace_corrupted(batch, dataset):
     # Finally, when the whole batch is fine, return it
     return t.utils.data.dataloader.default_collate(batch)
 
+
+# Taken from https://discuss.pytorch.org/t/questions-about-dataloader-and-dataset/806
+def collate_fn_skip_nonface(batch):
+    batch = list(filter(lambda x: x is not None, batch))
+    return t.utils.data.dataloader.default_collate(batch)
+
+
 def to_numpy(tensor):
     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
+
 
 def main():
     t.backends.cudnn.benchmark=True
@@ -101,10 +110,10 @@ def main():
     transform = tv.transforms.Compose([tv.transforms.Normalize(mean=127.5,std=128)])
     dataset = PainterByNumbers(dataset_dir,detector_dir,csv_file_path,transform)
 
-    custom_collate_fn = functools.partial(collate_fn_replace_corrupted, dataset=dataset)
+    custom_collate_fn = functools.partial(collate_fn_replace_nonface, dataset=dataset)
 
     # loader = t.utils.data.DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
-    loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=cpu_count(),pin_memory=True,collate_fn=custom_collate_fn)
+    loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=cpu_count(),pin_memory=True,collate_fn=collate_fn_skip_nonface)
 
 
     # the prerained head pose estimators
@@ -126,6 +135,9 @@ def main():
 
     with t.no_grad():
         for batch, filenames in loader:
+            print(batch)
+            print(batch.shape)
+            sys.exit()
             # Need to do this to have the correct memory ordering with the tensor elems. This is important because we pass this on as the buffer pointer to onnx input
             batch=batch.to(device).contiguous()
 
