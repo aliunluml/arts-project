@@ -79,7 +79,11 @@ def collate_fn_replace_nonface(batch, dataset):
 # Taken from https://discuss.pytorch.org/t/questions-about-dataloader-and-dataset/806
 def collate_fn_skip_nonface(batch):
     batch = list(filter(lambda x: x is not None, batch))
-    return t.utils.data.dataloader.default_collate(batch)
+    # Sometimes all samples are nonface. Then, we return a None object instead of default_collate because the latter expects a non-empty batch
+    if len(batch)!=0:
+        return t.utils.data.dataloader.default_collate(batch)
+    else:
+        return (None, None)
 
 
 def to_numpy(tensor):
@@ -135,9 +139,9 @@ def main():
 
     with t.no_grad():
         for batch, filenames in loader:
-            print(batch)
-            print(batch.shape)
-            sys.exit()
+            # If there are no faces in the current batch, skip it
+            if batch is None:
+                continue
             # Need to do this to have the correct memory ordering with the tensor elems. This is important because we pass this on as the buffer pointer to onnx input
             batch=batch.to(device).contiguous()
 
