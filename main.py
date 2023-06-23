@@ -117,7 +117,8 @@ def main():
     custom_collate_fn = functools.partial(collate_fn_replace_nonface, dataset=dataset)
 
     # loader = t.utils.data.DataLoader(dataset,batch_size=1,num_workers=1,collate_fn=custom_collate_fn)
-    loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=cpu_count(),pin_memory=True,collate_fn=collate_fn_skip_nonface)
+    # Use one worker process to load data. Otherwise, index errors sometimes pop up.
+    loader = t.utils.data.DataLoader(dataset,batch_size=BATCH_SIZE,shuffle=False,num_workers=0,pin_memory=True,collate_fn=collate_fn_skip_nonface)
 
 
     # the prerained head pose estimators
@@ -136,9 +137,10 @@ def main():
     resnet18_session = onnxruntime.InferenceSession(resnet18_path, providers=EP_list)
 
     metadata=[]
-
+    
     with t.no_grad():
-        for batch, filenames in loader:
+        for i,(batch, filenames) in enumerate(loader):
+            print(i)
             # If there are no faces in the current batch, skip it
             if batch is None:
                 continue
