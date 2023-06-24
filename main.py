@@ -137,7 +137,7 @@ def main():
     resnet18_session = onnxruntime.InferenceSession(resnet18_path, providers=EP_list)
 
     metadata=[]
-    
+
     with t.no_grad():
         for i,(batch, filenames) in enumerate(loader):
             print(i)
@@ -224,7 +224,7 @@ def main():
     df.to_csv('paintings_metadata.csv',index=False)
 
     # Save model outputs combined with other related info from the paintings dataset
-    all_data_info_df = pd.read_csv(DATA_CSV_FILENAME)
+    all_data_info_df = pd.read_csv(csv_file_path)
     df = df.join(all_data_info_df.set_index('new_filename'), on='filename',how='inner')
 
     # Please select the columns needed fom all_data_info. This does not do copy()
