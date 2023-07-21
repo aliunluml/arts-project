@@ -71,7 +71,7 @@ def collate_fn_replace_nonface(batch, dataset):
         # Replace corrupted examples with another examples randomly
         batch.extend([dataset[random.randint(0, len(dataset)-1)] for _ in range(diff)])
         # Recursive call to replace the replacements if they are corrupted
-        return collate_fn_replace_corrupted(batch, dataset)
+        return collate_fn_replace_nonface(batch, dataset)
     # Finally, when the whole batch is fine, return it
     return t.utils.data.dataloader.default_collate(batch)
 
@@ -83,7 +83,7 @@ def collate_fn_skip_nonface(batch):
     if len(batch)!=0:
         return t.utils.data.dataloader.default_collate(batch)
     else:
-        return (None, None)
+        return (None, None, None, None)
 
 
 def to_numpy(tensor):
@@ -139,7 +139,7 @@ def main():
     metadata=[]
 
     with t.no_grad():
-        for i,(batch, filenames) in enumerate(loader):
+        for i,(batch, filenames, num_bbss, bbs) in enumerate(loader):
             print(i)
             # If there are no faces in the current batch, skip it
             if batch is None:
@@ -191,7 +191,7 @@ def main():
             gender = np.choose(logits, choices)
 
             # APPEND THE INFO TO SAVE LATER ON AS A CSV FILE
-            batch_metadata = [{'filename':f,'yaw' : y,'pitch' : p, 'roll' : r,'gender':g} for f,y,p,r,g in zip(filenames,yaw,pitch,roll,gender)]
+            batch_metadata = [{'filename':f,'yaw' : y,'pitch' : p, 'roll' : r,'gender':g,'num_faces':num_bbs,'face_bb':bb} for f,y,p,r,g,num_bbs,bb in zip(filenames, yaw, pitch, roll, gender, num_bbss, bbs)]
             metadata.extend(batch_metadata)
 
             if out_dir is not None:
@@ -218,7 +218,7 @@ def main():
 
 
     df = pd.DataFrame(metadata)
-    # Remove duplicate images that are resampled with collate_fn
+    # Remove duplicate images that are resampled with collate_fn_replace_nonface
     df = df.drop_duplicates(subset='filename')
     # Save model outputs
     df.to_csv('paintings_metadata.csv',index=False)
@@ -228,7 +228,7 @@ def main():
     df = df.join(all_data_info_df.set_index('new_filename'), on='filename',how='inner')
 
     # Please select the columns needed fom all_data_info. This does not do copy()
-    df = df[['date','gender','style','roll','yaw','pitch']]
+    df = df[['artist','date','style','pixelsx','pixelsy','num_faces','face_bb','roll','yaw','pitch','gender']]
     df.to_csv('paintings_all_data_info.csv',index=False)
 
 

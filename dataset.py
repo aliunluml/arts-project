@@ -48,6 +48,10 @@ class PainterByNumbers(t.utils.data.Dataset):
 
         batch_size,channels,topk,bb_data_size=detections.shape
         # batch_size is either 0 or 1 because we input a single blob.
+
+        locs=[]
+
+        # If we have an output (we should if our model works)
         if(batch_size>0):
             # If there are faces detected
             # we're making the assumption that each image has only ONE
@@ -70,26 +74,27 @@ class PainterByNumbers(t.utils.data.Dataset):
                     x2 = int(detections[0, 0, i, 5] * width)
                     y2 = int(detections[0, 0, i, 6] * height)
 
-                    # extract the face ROI as bounding box and grab its dimensions
-                    bb = image[y1:y2+1, x1:x2+1]
+                    face_height=y2-y1+1
+                    face_width=x2-x1+1
 
-                    # cv2.rectangle(image, (x1, y1), (x2, y2),color=(0, 255, 0),thickness=5)
-                    # cv2.imwrite(filename,image)
-                    # painting is not in the NCHW order
-                    (face_height, face_width) = bb.shape[:2]
                     # ensure the face width and height are sufficiently large. input image is 300x300
                     if (face_width < 20 or face_height < 20):
                         pass
                     else:
-                        return bb
+                        loc={'upperLeft':(x1,y1),'lowerRight':(x2,y2)}
+                        locs.append(loc)
+
                 else:
+                    # Confidence score for this detection is below the threshold
                     pass
             # Collate function in the dataloader deals with the bbs that are not sufficiently confident or large.
-            return None
+            pass
 
         else:
             # Collate function in the dataloader deals with the portraits where no face is detected
-            return None
+            pass
+
+        return locs
 
 
     def __getitem__(self,idx):
@@ -113,11 +118,18 @@ class PainterByNumbers(t.utils.data.Dataset):
 
         conf_thres=0.7
 
-        face = self.__getroi__(filename,painting,face_detector,conf_thres)
+        bbs = self.__getroi__(filename,painting,face_detector,conf_thres)
+        num_faces=len(bbs)
 
-        if face is None:
+        if num_faces==0:
             return None
         else:
+            # extract the face ROI as the bounding box with the highest confidence score
+            bb = bbs[0]
+            x1,y1 = bb.upperLeft
+            x2,y2 = bb.lowerRight
+            face = painting[y1:y2+1, x1:x2+1]
+
             # resize for FSA-Net. It is already standardized.
             face = cv2.resize(face,(64,64))
             # OpenCV has BGR order whereas Pytorch has RGB. This does not impact the pretrained FSA-Net we have in our pipeline because it was trained on RGB images.
@@ -128,4 +140,4 @@ class PainterByNumbers(t.utils.data.Dataset):
             x = t.from_numpy(face).float()
             x = self.transform(x)
 
-            return (x, filename)
+            return (x, filename, num_faces, bb)
