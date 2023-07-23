@@ -241,7 +241,7 @@ def main():
     df = df.join(all_data_info_df.set_index('new_filename'), on='filename',how='inner')
 
     # Please select the columns needed fom all_data_info. This does not do copy()
-    df = df[['artist','date','style','pixelsx','pixelsy','num_faces','face_bb','roll','yaw','pitch','gender']]
+    df = df[['artist','date','style','pixelsx','pixelsy','num_faces','roll','yaw','pitch','gender','x1','y1','x2','y2']]
     df.to_csv('paintings_all_data_info.csv',index=False)
 
 
