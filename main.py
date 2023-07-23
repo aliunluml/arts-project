@@ -190,8 +190,21 @@ def main():
             choices = ['F', 'M']
             gender = np.choose(logits, choices)
 
+            # Convert a tensor object to a numpy float array because we do not want tensor objects in our CSV file. A numpy float is the same as a Python float.
+            num_bbss=num_bbss.numpy()
+
+            # Tuple is converted to a list
+            # bbs={'upperLeft': [tensor([1...len(batch)]), tensor([1...len(batch)])], 'lowerRight': [tensor([1...len(batch)]), tensor([1...len(batch)])]}
+            upper_left=bbs['upperLeft']
+            lower_right=bbs['lowerRight']
+
+            x1s=upper_left[0].numpy()
+            y1s=upper_left[1].numpy()
+            x2s=lower_right[0].numpy()
+            y2s=lower_right[1].numpy()
+
             # APPEND THE INFO TO SAVE LATER ON AS A CSV FILE
-            batch_metadata = [{'filename':f,'yaw' : y,'pitch' : p, 'roll' : r,'gender':g,'num_faces':num_bbs,'face_bb':bb} for f,y,p,r,g,num_bbs,bb in zip(filenames, yaw, pitch, roll, gender, num_bbss, bbs)]
+            batch_metadata = [{'filename':f,'yaw' : y,'pitch' : p, 'roll' : r,'gender':g,'num_faces':num_bbs,'x1':x1,'y1':y1,'x2':x2,'y2':y2} for f,y,p,r,g,num_bbs,x1,y1,x2,y2 in zip(filenames, yaw, pitch, roll, gender, num_bbss, x1s, y1s, x2s, y2s)]
             metadata.extend(batch_metadata)
 
             if out_dir is not None:

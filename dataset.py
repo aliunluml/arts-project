@@ -74,8 +74,9 @@ class PainterByNumbers(t.utils.data.Dataset):
                     x2 = int(detections[0, 0, i, 5] * width)
                     y2 = int(detections[0, 0, i, 6] * height)
 
-                    face_height=y2-y1+1
-                    face_width=x2-x1+1
+                    # bb corners may lie outside the image and numpy doesn't give an out of index error.
+                    face=image[y1:y2+1, x1:x2+1,:]
+                    face_height,face_width,_=face.shape
 
                     # ensure the face width and height are sufficiently large. input image is 300x300
                     if (face_width < 20 or face_height < 20):
@@ -126,8 +127,8 @@ class PainterByNumbers(t.utils.data.Dataset):
         else:
             # extract the face ROI as the bounding box with the highest confidence score
             bb = bbs[0]
-            x1,y1 = bb.upperLeft
-            x2,y2 = bb.lowerRight
+            x1,y1 = bb['upperLeft']
+            x2,y2 = bb['lowerRight']
             face = painting[y1:y2+1, x1:x2+1]
 
             # resize for FSA-Net. It is already standardized.
