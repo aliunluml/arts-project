@@ -20,11 +20,11 @@ def is_corrupt(path):
 
 
 class PainterByNumbers(t.utils.data.Dataset):
-    def __init__(self,dataset_dir,detector_dir,csv_file_path,transform=lambda x:x):
+    def __init__(self,dataset_dir,detector,csv_file_path,transform=lambda x:x):
 
         self.transform=transform
         self.dataset_path=dataset_dir
-        self.detector_path=detector_dir
+        self.face_detector=detector
         self.train_info_df=pd.read_csv(csv_file_path)
 
     def __len__(self):
@@ -110,16 +110,10 @@ class PainterByNumbers(t.utils.data.Dataset):
         else:
             pass
 
-        # https://github.com/opencv/opencv/blob/3.4.0/samples/dnn/resnet_ssd_face_python.py
-        detector_config_path = os.path.join(self.detector_path,'resnet10_ssd.prototxt')
-        # https://github.com/opencv/opencv_3rdparty/tree/dnn_samples_face_detector_20170830
-        detector_model_path = os.path.join(self.detector_path,'res10_300x300_ssd_iter_140000.caffemodel')
-
-        face_detector = cv2.dnn.readNetFromCaffe(detector_config_path, detector_model_path)
-
+        
         conf_thres=0.7
 
-        bbs = self.__getroi__(filename,painting,face_detector,conf_thres)
+        bbs = self.__getroi__(filename,painting,self.face_detector,conf_thres)
         num_faces=len(bbs)
 
         if num_faces==0:
