@@ -110,9 +110,16 @@ def main():
     else:
         out_dir=None
 
+    # https://github.com/opencv/opencv/blob/3.4.0/samples/dnn/resnet_ssd_face_python.py
+    detector_config_path = os.path.join(dataset_dir,'resnet10_ssd.prototxt')
+    # https://github.com/opencv/opencv_3rdparty/tree/dnn_samples_face_detector_20170830
+    detector_model_path = os.path.join(dataset_dir,'res10_300x300_ssd_iter_140000.caffemodel')
+
+    face_detector = cv2.dnn.readNetFromCaffe(detector_config_path, detector_model_path)
+
 
     transform = tv.transforms.Compose([tv.transforms.Normalize(mean=127.5,std=128)])
-    dataset = PainterByNumbers(dataset_dir,detector_dir,csv_file_path,transform)
+    dataset = PainterByNumbers(dataset_dir,face_detector,csv_file_path,transform)
 
     custom_collate_fn = functools.partial(collate_fn_replace_nonface, dataset=dataset)
 
