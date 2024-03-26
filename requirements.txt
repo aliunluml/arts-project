@@ -25,7 +25,7 @@ backports.weakref==1.0.post1
 beautifulsoup4 @ file:///home/linux1/recipes/ci/beautifulsoup4_1610988766420/work
 bitarray @ file:///opt/concourse/worker/volumes/live/21dd8f41-3cae-47b4-5fab-684b9b2db14f/volume/bitarray_1618434866960/work
 bkcharts==0.2
-black==19.10b0
+black==24.3.0
 bleach @ file:///tmp/build/80754af9/bleach_1612211392645/work
 bokeh @ file:///opt/concourse/worker/volumes/live/65ce9588-f765-4deb-5b52-1c552a693654/volume/bokeh_1620783891289/work
 boto==2.49.0
